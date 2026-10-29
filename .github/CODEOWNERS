@@ -1,3 +1,27 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-*                       @cloudoperators/Administrators
+*                         @cloudoperators/greenhouse-core
+
+/.github/                 @cloudoperators/greenhouse-core
+/.github/workflows/       @cloudoperators/greenhouse-ai-ops
+/.github/labeler.yml      @cloudoperators/greenhouse-core @cloudoperators/greenhouse-backend
+/.github/licenserc.yaml   @cloudoperators/greenhouse-core @cloudoperators/greenhouse-backend
+/.github/renovate.json    @cloudoperators/greenhouse-core @cloudoperators/greenhouse-backend
+/.github/.goreleaser.yaml @cloudoperators/greenhouse-core @cloudoperators/greenhouse-backend
+
+/docs/                    @cloudoperators/greenhouse-ai-ops
+.gitignore                @cloudoperators/greenhouse-ai-ops
+/README.md                @cloudoperators/greenhouse-core
+
+/cmd/                     @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/config/                  @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/e2e/                     @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/hack/                    @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/internal/                @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/pkg/                     @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/test/                    @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/Dockerfile               @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/Makefile                 @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/.golangci.yaml           @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+/go.*                     @cloudoperators/greenhouse-ai-ops @cloudoperators/greenhouse-backend
+

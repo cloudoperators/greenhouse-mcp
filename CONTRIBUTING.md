@@ -1,3 +1,8 @@
+<!--
+  ~ SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company and Greenhouse contributors
+  ~ SPDX-License-Identifier: Apache-2.0
+-->
+
 # Contributing
 
 ## Code of Conduct
@@ -31,8 +36,33 @@ The following rule governs code contributions:
 * Contributions must be licensed under the [Apache 2.0 License](./LICENSE)
 * Due to legal reasons, contributors will be asked to accept a Developer Certificate of Origin (DCO) when they create the first pull request to this project. This happens in an automated fashion during the submission process. SAP uses [the standard DCO text of the Linux Foundation](https://developercertificate.org/).
 
+## Opening a Pull Request
+
+We are enforcing that the PR title follows [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). During the release the changelog will be generated based on the commit history.
+
+That means that the PR title should be in the format of `<type>(<scope>): <description>`. For example: `fix(teamrolebindings): issue with updating status`.
+
+A full list of accepted types and scopes can be found [here](https://github.com/cloudoperators/greenhouse/blob/main/.github/workflows/ci-pr-title.yaml) in the GitHub Action configuration.
+
+Before opening a Pull Request, make sure:
+
+* There is an open issue related to the change, and this issue was accepted by a maintainer.
+* Your code is compliant with the [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments)
+* Tests for the changes are included.
+* `make test` passes successfully.
+
 ## Issues and Planning
 
-* We use GitHub issues to track bugs and enhancement requests.
+We follow a shared issue lifecycle across all `cloudoperators` repositories. See the **[Issue Lifecycle documentation](https://github.com/cloudoperators/common/blob/main/ISSUE_LIFECYCLE.md)** for the full process including:
 
-* Please provide as much context as possible when you open an issue. The information you provide must be comprehensive enough to reproduce that issue for the assignee.
+* Automatic triage labeling
+* Triage decision matrix
+* Definition of Ready
+* Refinement workflow
+* Sprint/quarter planning
+
+Quick links:
+
+* [Issues needing triage (org-wide)](https://github.com/issues?q=org%3Acloudoperators+label%3Aneeds-triage+is%3Aopen+sort%3Acreated-asc)
+* [Issues ready to pick up (`backlog`)](https://github.com/cloudoperators/greenhouse/issues?q=is%3Aopen+is%3Aissue+label%3Abacklog)
+* [Project board](https://github.com/orgs/cloudoperators/projects/9)

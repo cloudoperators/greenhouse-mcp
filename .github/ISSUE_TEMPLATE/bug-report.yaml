@@ -1,9 +1,9 @@
 name: "🐛 Bug Report"
 description: Create a new ticket for a bug experienced in Greenhouse.
 title: "🐛 [BUG] - <title>"
-labels: [
-  "bug",
-]
+labels:
+  - "bug"
+  - "needs-triage"
 body:
   - type: markdown
     attributes:
@@ -41,19 +41,6 @@ body:
       render: bash
     validations:
       required: true
-  - type: textarea
-    id: manifests
-    attributes:
-      label: "Manifests"
-      description: If applicable, add manifests to help reproduce your problem.
-      value: | 
-        ```yaml 
-          apiVersion: greenhouse.sap/v1alpha1
-          kind: ...
-        ```
-      render: yaml
-    validations:
-      required: false
   - type: textarea
     id: screenshot
     attributes:

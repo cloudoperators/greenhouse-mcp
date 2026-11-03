@@ -1,0 +1,9 @@
+bin/
+dist/
+.git/
+.claude/
+.idea/
+.vscode/
+*.md
+cover.out
+vendor/

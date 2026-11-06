@@ -4,6 +4,8 @@
 package greenhouse
 
 import (
+	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"k8s.io/client-go/rest"
@@ -14,8 +16,7 @@ import (
 func RegisterTools(log logr.Logger, server *mcp.Server, apiServer string, caData []byte) error {
 	greenhouse, err := tools.NewGreenhouse(log, apiServer, caData)
 	if err != nil {
-		log.Error(err, "failed to initialize greenhouse client")
-		return err
+		return fmt.Errorf("initializing greenhouse client: %w", err)
 	}
 
 	registerToolHandlers(server, greenhouse)
@@ -28,8 +29,7 @@ func RegisterTools(log logr.Logger, server *mcp.Server, apiServer string, caData
 func RegisterToolsWithConfig(log logr.Logger, server *mcp.Server, cfg *rest.Config) error {
 	greenhouse, err := tools.NewGreenhouseWithConfig(log, cfg)
 	if err != nil {
-		log.Error(err, "failed to initialize greenhouse client from config")
-		return err
+		return fmt.Errorf("initializing greenhouse client from config: %w", err)
 	}
 
 	registerToolHandlers(server, greenhouse)

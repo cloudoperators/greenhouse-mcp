@@ -39,19 +39,19 @@ type nodeNotReady struct {
 }
 
 type clusterDebugger struct {
-	client  client.Client
-	log     logr.Logger
-	report  clusterDebugReport
-	cluster *greenhousev1alpha1.Cluster
+	kubeClient client.Client
+	log        logr.Logger
+	report     clusterDebugReport
+	cluster    *greenhousev1alpha1.Cluster
 }
 
-func newClusterDebugger(c client.Client, log logr.Logger) *clusterDebugger {
-	return &clusterDebugger{client: c, log: log}
+func newClusterDebugger(kubeClient client.Client, log logr.Logger) *clusterDebugger {
+	return &clusterDebugger{kubeClient: kubeClient, log: log}
 }
 
 func (d *clusterDebugger) withCluster(ctx context.Context, name, namespace string) *clusterDebugger {
 	cluster := &greenhousev1alpha1.Cluster{}
-	if err := d.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, cluster); err != nil {
+	if err := d.kubeClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, cluster); err != nil {
 		d.log.Error(err, "failed to get cluster", "name", name, "namespace", namespace)
 		d.report = clusterDebugReport{
 			Name:       name,
@@ -62,16 +62,16 @@ func (d *clusterDebugger) withCluster(ctx context.Context, name, namespace strin
 	}
 
 	d.cluster = cluster
-	ct := "unknown"
-	if v, ok := cluster.Annotations[greenhouseapis.ClusterConnectivityAnnotation]; ok {
-		ct = v
+	onboardingType := "unknown"
+	if value, ok := cluster.Annotations[greenhouseapis.ClusterConnectivityAnnotation]; ok {
+		onboardingType = value
 	}
 
 	report := clusterDebugReport{
 		Name:              cluster.Name,
 		Namespace:         cluster.Namespace,
 		KubernetesVersion: cluster.Status.KubernetesVersion,
-		OnboardingType:    ct,
+		OnboardingType:    onboardingType,
 		Conditions:        clusterConditions(cluster.Status.Conditions),
 	}
 
@@ -80,14 +80,17 @@ func (d *clusterDebugger) withCluster(ctx context.Context, name, namespace strin
 	}
 
 	if cluster.Status.Nodes != nil {
-		ns := &nodesSummary{
+		nodes := &nodesSummary{
 			Total: cluster.Status.Nodes.Total,
 			Ready: cluster.Status.Nodes.Ready,
 		}
-		for _, n := range cluster.Status.Nodes.NotReady {
-			ns.NotReady = append(ns.NotReady, nodeNotReady{Name: n.Name, Message: n.Message})
+		for _, notReadyNode := range cluster.Status.Nodes.NotReady {
+			nodes.NotReady = append(nodes.NotReady, nodeNotReady{
+				Name:    notReadyNode.Name,
+				Message: notReadyNode.Message,
+			})
 		}
-		report.Nodes = ns
+		report.Nodes = nodes
 	}
 
 	d.report = report
@@ -100,7 +103,7 @@ func (d *clusterDebugger) withEvents(ctx context.Context, name, namespace string
 		fields.OneTermEqualSelector("involvedObject.name", name),
 		fields.OneTermEqualSelector("involvedObject.kind", "Cluster"),
 	)
-	if err := d.client.List(ctx, eventList,
+	if err := d.kubeClient.List(ctx, eventList,
 		client.InNamespace(namespace),
 		client.MatchingFieldsSelector{Selector: fieldSelector},
 	); err != nil {
@@ -116,12 +119,12 @@ func (d *clusterDebugger) build() clusterDebugReport {
 }
 
 func (g *Greenhouse) DebugCluster(ctx context.Context, req *mcp.CallToolRequest, args GetArgs) (*mcp.CallToolResult, any, error) {
-	c, err := g.CheckAccess(ctx, req, "get", "clusters", args.Namespace, args.Name)
+	kubeClient, err := g.CheckAccess(ctx, req, "get", "clusters", args.Namespace, args.Name)
 	if err != nil {
 		return nil, nil, kubeErr(err)
 	}
 
-	report := newClusterDebugger(c, g.log).
+	report := newClusterDebugger(kubeClient, g.log).
 		withCluster(ctx, args.Name, args.Namespace).
 		withEvents(ctx, args.Name, args.Namespace).
 		build()
@@ -133,15 +136,18 @@ func (g *Greenhouse) DebugCluster(ctx context.Context, req *mcp.CallToolRequest,
 	}, nil, nil
 }
 
+// clusterConditions converts Greenhouse-typed conditions for the cluster debug
+// report. Kept here rather than in debug_conditions.go because it is only used
+// by the cluster debugger.
 func clusterConditions(conditions []greenhousemetav1alpha1.Condition) []statusCondition {
 	var result []statusCondition
-	for _, c := range conditions {
+	for _, condition := range conditions {
 		result = append(result, statusCondition{
-			Type:               string(c.Type),
-			Status:             string(c.Status),
-			Reason:             string(c.Reason),
-			Message:            c.Message,
-			LastTransitionTime: c.LastTransitionTime.Format(timestampFormat),
+			Type:               string(condition.Type),
+			Status:             string(condition.Status),
+			Reason:             string(condition.Reason),
+			Message:            condition.Message,
+			LastTransitionTime: condition.LastTransitionTime.Format(timestampFormat),
 		})
 	}
 	return result

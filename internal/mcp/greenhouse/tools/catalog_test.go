@@ -6,100 +6,18 @@ package tools
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 
 	greenhousev1alpha1 "github.com/cloudoperators/greenhouse/api/v1alpha1"
-	"github.com/go-logr/logr"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	authenticationv1 "k8s.io/api/authentication/v1"
-	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/cloudoperators/greenhouse-mcp/internal/mocks"
 )
-
-// newTestGreenhouse creates a Greenhouse instance backed by the given mock client.
-func newTestGreenhouse(t *testing.T) (*Greenhouse, *mocks.MockClient) {
-	t.Helper()
-	mc := mocks.NewMockClient(t)
-	g := &Greenhouse{
-		Client: mc,
-		log:    logr.Discard(),
-	}
-	return g, mc
-}
-
-// reqWithToken builds a *mcp.CallToolRequest whose Extra.Header carries
-// the supplied bearer token.
-func reqWithToken(token string) *mcp.CallToolRequest {
-	h := http.Header{}
-	if token != "" {
-		h.Set("Authorization", "Bearer "+token)
-	}
-	return &mcp.CallToolRequest{
-		Extra: &mcp.RequestExtra{Header: h},
-	}
-}
-
-// --- mock helpers to simulate K8s API behaviour on Create calls ---
-
-// authenticateUser returns a Run callback that marks the TokenReview as authenticated.
-func authenticateUser(user string, groups []string) func(context.Context, client.Object, ...client.CreateOption) {
-	return func(_ context.Context, obj client.Object, _ ...client.CreateOption) {
-		tr, ok := obj.(*authenticationv1.TokenReview)
-		if !ok {
-			return
-		}
-		tr.Status = authenticationv1.TokenReviewStatus{
-			Authenticated: true,
-			User: authenticationv1.UserInfo{
-				Username: user,
-				Groups:   groups,
-			},
-		}
-	}
-}
-
-// denyToken returns a Run callback that marks the TokenReview as not authenticated.
-func denyToken() func(context.Context, client.Object, ...client.CreateOption) {
-	return func(_ context.Context, obj client.Object, _ ...client.CreateOption) {
-		tr, ok := obj.(*authenticationv1.TokenReview)
-		if !ok {
-			return
-		}
-		tr.Status = authenticationv1.TokenReviewStatus{Authenticated: false}
-	}
-}
-
-// allowAccess returns a Run callback that allows the SubjectAccessReview.
-func allowAccess() func(context.Context, client.Object, ...client.CreateOption) {
-	return func(_ context.Context, obj client.Object, _ ...client.CreateOption) {
-		sar, ok := obj.(*authorizationv1.SubjectAccessReview)
-		if !ok {
-			return
-		}
-		sar.Status = authorizationv1.SubjectAccessReviewStatus{Allowed: true}
-	}
-}
-
-// denyAccess returns a Run callback that denies the SubjectAccessReview.
-func denyAccess() func(context.Context, client.Object, ...client.CreateOption) {
-	return func(_ context.Context, obj client.Object, _ ...client.CreateOption) {
-		sar, ok := obj.(*authorizationv1.SubjectAccessReview)
-		if !ok {
-			return
-		}
-		sar.Status = authorizationv1.SubjectAccessReviewStatus{
-			Allowed: false,
-			Reason:  "forbidden by policy",
-		}
-	}
-}
 
 // populateCatalog returns a Run callback that fills in the Catalog object
 // returned by client.Get.

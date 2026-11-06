@@ -6,34 +6,52 @@ package greenhouse
 import (
 	"github.com/go-logr/logr"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"k8s.io/client-go/rest"
 
 	"github.com/cloudoperators/greenhouse-mcp/internal/mcp/greenhouse/tools"
 )
 
 func RegisterTools(log logr.Logger, server *mcp.Server, apiServer string, caData []byte) error {
-	g, err := tools.NewGreenhouse(log, apiServer, caData)
+	greenhouse, err := tools.NewGreenhouse(log, apiServer, caData)
 	if err != nil {
 		log.Error(err, "failed to initialize greenhouse client")
 		return err
 	}
 
-	mcp.AddTool(server, tools.ClusterTool(), g.GetCluster)
-	mcp.AddTool(server, tools.ClusterSchemaTool(), g.GetClusterSchema)
+	registerToolHandlers(server, greenhouse)
+	return nil
+}
 
-	mcp.AddTool(server, tools.CatalogTool(), g.GetCatalog)
-	mcp.AddTool(server, tools.CatalogSchemaTool(), g.GetCatalogSchema)
+// RegisterToolsWithConfig wires up all tools using an already-resolved
+// *rest.Config. Used by integration tests to inject an envtest config
+// without going through in-cluster / kubeconfig discovery.
+func RegisterToolsWithConfig(log logr.Logger, server *mcp.Server, cfg *rest.Config) error {
+	greenhouse, err := tools.NewGreenhouseWithConfig(log, cfg)
+	if err != nil {
+		log.Error(err, "failed to initialize greenhouse client from config")
+		return err
+	}
 
-	mcp.AddTool(server, tools.PluginTool(), g.GetPlugin)
-	mcp.AddTool(server, tools.ListPluginsTool(), g.ListPlugins)
-	mcp.AddTool(server, tools.PluginSchemaTool(), g.GetPluginSchema)
+	registerToolHandlers(server, greenhouse)
+	return nil
+}
 
-	mcp.AddTool(server, tools.PluginDefinitionTool(), g.GetPluginDefinition)
-	mcp.AddTool(server, tools.PluginDefinitionSchemaTool(), g.GetPluginDefinitionSchema)
+func registerToolHandlers(server *mcp.Server, greenhouse *tools.Greenhouse) {
+	mcp.AddTool(server, tools.ClusterTool(), greenhouse.GetCluster)
+	mcp.AddTool(server, tools.ClusterSchemaTool(), greenhouse.GetClusterSchema)
 
-	mcp.AddTool(server, tools.DebugPluginTool(), g.DebugPlugin)
-	mcp.AddTool(server, tools.DebugClusterTool(), g.DebugCluster)
+	mcp.AddTool(server, tools.CatalogTool(), greenhouse.GetCatalog)
+	mcp.AddTool(server, tools.CatalogSchemaTool(), greenhouse.GetCatalogSchema)
+
+	mcp.AddTool(server, tools.PluginTool(), greenhouse.GetPlugin)
+	mcp.AddTool(server, tools.ListPluginsTool(), greenhouse.ListPlugins)
+	mcp.AddTool(server, tools.PluginSchemaTool(), greenhouse.GetPluginSchema)
+
+	mcp.AddTool(server, tools.PluginDefinitionTool(), greenhouse.GetPluginDefinition)
+	mcp.AddTool(server, tools.PluginDefinitionSchemaTool(), greenhouse.GetPluginDefinitionSchema)
+
+	mcp.AddTool(server, tools.DebugPluginTool(), greenhouse.DebugPlugin)
+	mcp.AddTool(server, tools.DebugClusterTool(), greenhouse.DebugCluster)
 
 	server.AddPrompt(tools.DebugClusterPrompt(), tools.DebugClusterPromptHandler)
-
-	return nil
 }

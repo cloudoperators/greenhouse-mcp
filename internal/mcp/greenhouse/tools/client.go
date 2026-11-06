@@ -91,15 +91,36 @@ func NewGreenhouse(log logr.Logger, apiServer string, caData []byte) (*Greenhous
 		return nil, err
 	}
 
-	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	kubeClient, err := client.New(cfg, client.Options{Scheme: scheme})
 	if err != nil {
 		log.Error(err, "failed to create k8s client")
 		return nil, err
 	}
 
 	return &Greenhouse{
-		Client:  c,
+		Client:  kubeClient,
 		factory: newClientFactory(apiServer, caData),
+		log:     log,
+	}, nil
+}
+
+// NewGreenhouseWithConfig builds a Greenhouse from an already-resolved
+// *rest.Config. Intended for integration tests that inject an envtest config
+// directly, bypassing the in-cluster / kubeconfig discovery in NewGreenhouse.
+func NewGreenhouseWithConfig(log logr.Logger, cfg *rest.Config) (*Greenhouse, error) {
+	cfg.WrapTransport = func(roundTripper http.RoundTripper) http.RoundTripper {
+		return otelhttp.NewTransport(roundTripper)
+	}
+
+	kubeClient, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		log.Error(err, "failed to create k8s client from config")
+		return nil, err
+	}
+
+	return &Greenhouse{
+		Client:  kubeClient,
+		factory: newClientFactory(cfg.Host, cfg.TLSClientConfig.CAData),
 		log:     log,
 	}, nil
 }

@@ -8,17 +8,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/goccy/go-json"
 )
 
-// FetchCA fetches a PEM-encoded CA certificate from the given discovery URL.
-// The URL is expected to return JSON with a "certs" field containing the PEM data.
-func FetchCA(ctx context.Context, url string) ([]byte, error) {
+// FetchCA loads a PEM-encoded CA certificate. When caFile is non-empty the
+// file is read directly. Otherwise the certificate is fetched from caURL,
+// which must return JSON with a "certs" field containing the PEM data.
+func FetchCA(ctx context.Context, caURL, caFile string) ([]byte, error) {
+	if caFile != "" {
+		data, err := os.ReadFile(caFile)
+		if err != nil {
+			return nil, fmt.Errorf("reading CA file %s: %w", caFile, err)
+		}
+		return data, nil
+	}
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, caURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +50,7 @@ func FetchCA(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	if result.Certs == "" {
-		return nil, fmt.Errorf("no certs field in response from %s", url)
+		return nil, fmt.Errorf("no certs field in response from %s", caURL)
 	}
 	return []byte(result.Certs), nil
 }

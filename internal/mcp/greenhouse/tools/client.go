@@ -96,7 +96,6 @@ func NewGreenhouse(log logr.Logger, apiServer string, caData []byte) (*Greenhous
 	}, nil
 }
 
-
 func getRESTConfig(log logr.Logger, apiServer string, caData []byte) (*rest.Config, error) {
 	cfg, err := rest.InClusterConfig()
 	if err == nil {

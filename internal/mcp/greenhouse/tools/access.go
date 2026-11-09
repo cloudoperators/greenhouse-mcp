@@ -44,6 +44,9 @@ func (g *Greenhouse) CheckAccess(ctx context.Context, req *mcp.CallToolRequest, 
 	sarGroups := tokenReview.Status.User.Groups
 	isAgent := false
 
+	// OBO headers are injected by the agentgateway after JWT validation — they
+	// are never forwarded from untrusted callers. Direct exposure of this server
+	// without the gateway is not a supported deployment model.
 	if oboUser, oboGroups := onBehalfOf(req); oboUser != "" {
 		sarUser = oboUser
 		sarGroups = oboGroups
@@ -101,6 +104,8 @@ func onBehalfOf(req *mcp.CallToolRequest) (user string, groups []string) {
 // clientForRequest returns a per-request client authenticated with the
 // incoming SPIFFE token when on-behalf-of headers are present, or the
 // shared pod-SA client for human callers.
+// Schema tools use this intentionally — CRD schemas are public OpenAPI specs
+// (equivalent to kubectl explain) and contain no tenant data.
 func (g *Greenhouse) clientForRequest(req *mcp.CallToolRequest) (client.Client, error) {
 	oboUser, _ := onBehalfOf(req)
 	if oboUser == "" {

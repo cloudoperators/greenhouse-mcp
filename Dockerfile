@@ -15,10 +15,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 	make action-build CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} VERSION=${VERSION} GIT_COMMIT=${GIT_COMMIT}
 
 FROM alpine:3.23.3
-RUN apk --no-cache add ca-certificates curl jq \
-  && update-ca-certificates
 WORKDIR /
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /workspace/bin/* .
 USER 65534:65534
 

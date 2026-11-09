@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"k8s.io/client-go/rest"
 
 	"github.com/cloudoperators/greenhouse-mcp/internal/mcp/greenhouse/tools"
 )
@@ -17,19 +16,6 @@ func RegisterTools(log logr.Logger, server *mcp.Server, apiServer string, caData
 	greenhouse, err := tools.NewGreenhouse(log, apiServer, caData)
 	if err != nil {
 		return fmt.Errorf("initializing greenhouse client: %w", err)
-	}
-
-	registerToolHandlers(server, greenhouse)
-	return nil
-}
-
-// RegisterToolsWithConfig wires up all tools using an already-resolved
-// *rest.Config. Used by integration tests to inject an envtest config
-// without going through in-cluster / kubeconfig discovery.
-func RegisterToolsWithConfig(log logr.Logger, server *mcp.Server, cfg *rest.Config) error {
-	greenhouse, err := tools.NewGreenhouseWithConfig(log, cfg)
-	if err != nil {
-		return fmt.Errorf("initializing greenhouse client from config: %w", err)
 	}
 
 	registerToolHandlers(server, greenhouse)

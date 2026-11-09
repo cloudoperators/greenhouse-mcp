@@ -81,6 +81,9 @@ func CreateLoggingMiddleware(logger logr.Logger) mcp.Middleware {
 	}
 }
 
+// statusRecorder wraps ResponseWriter to capture the HTTP status code for logging.
+// It does not implement http.Flusher — the go-sdk streamable HTTP transport
+// flushes at the transport layer and does not require Flusher on the outer writer.
 type statusRecorder struct {
 	http.ResponseWriter
 	status int

@@ -139,6 +139,12 @@ func getRESTConfig(log logr.Logger, apiServer string, caData []byte) (*rest.Conf
 		log.Error(err, "failed to load kubeconfig")
 		return nil, err
 	}
+	// In the kubeconfig path the host and credentials are taken as-is from the
+	// active context. This path is only used for local dev and integration tests —
+	// in production the in-cluster branch above runs instead.
+	// Note: --greenhouse-api-server is intentionally NOT applied here because the
+	// kubeconfig context already points at the correct cluster (including its own
+	// CA and client credentials). Overriding only the host would break TLS.
 	if len(caData) > 0 {
 		cfg.CAData = caData
 	}

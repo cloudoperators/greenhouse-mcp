@@ -29,29 +29,12 @@ It exposes Greenhouse resources and operations as MCP tools, enabling AI assista
 
 The server exposes MCP over streamable HTTP. By default it listens on port `8085` with the MCP endpoint at `/mcp` and a health check at `/healthz`.
 
-### Build & run
-
 ```sh
 # build the binary to ./bin/mcp-greenhouse
 make build
 
 # or run directly from source
 make run
-```
-
-Configuration is provided via flags:
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--greenhouse-api-server` | `https://greenhouse.example.com` | URL of the Greenhouse API server. |
-| `--ca-url` | `https://greenhouse.example.com/clusters/cluster-ca` | URL to fetch the Greenhouse cluster CA certificate from. Expected to return JSON with a `certs` field containing the PEM data. |
-| `--app-bind-address` | `localhost` | Address to bind the HTTP server to. |
-| `--otel-endpoint` | _(empty)_ | OTLP gRPC endpoint for tracing. Empty disables tracing. |
-
-```sh
-./bin/mcp-greenhouse \
-  --greenhouse-api-server=https://greenhouse.example.com \
-  --ca-url=https://greenhouse.example.com/clusters/cluster-ca
 ```
 
 The server authenticates each request with the caller's bearer token via Kubernetes `TokenReview` + `SubjectAccessReview`, so access is scoped to what the caller is allowed to see in Greenhouse.

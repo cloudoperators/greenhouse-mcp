@@ -96,26 +96,6 @@ func NewGreenhouse(log logr.Logger, apiServer string, caData []byte) (*Greenhous
 	}, nil
 }
 
-// NewGreenhouseWithConfig constructs a Greenhouse from an already-resolved
-// *rest.Config, bypassing in-cluster / kubeconfig discovery.
-// Intended for integration tests that inject an envtest config directly.
-func NewGreenhouseWithConfig(log logr.Logger, cfg *rest.Config) (*Greenhouse, error) {
-	cfg.WrapTransport = func(roundTripper http.RoundTripper) http.RoundTripper {
-		return otelhttp.NewTransport(roundTripper)
-	}
-
-	kubeClient, err := client.New(cfg, client.Options{Scheme: scheme})
-	if err != nil {
-		log.Error(err, "failed to create k8s client from config")
-		return nil, err
-	}
-
-	return &Greenhouse{
-		Client:  kubeClient,
-		factory: newClientFactory(cfg.Host, cfg.CAData),
-		log:     log,
-	}, nil
-}
 
 func getRESTConfig(log logr.Logger, apiServer string, caData []byte) (*rest.Config, error) {
 	cfg, err := rest.InClusterConfig()

@@ -70,34 +70,15 @@ jobs:
           only-new-issues: true
           skip-cache: false
 
-  integration:
-    name: "Integration"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install setup-envtest
-        run: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.24.1
-
-      - name: Run integration tests
-        run: make integration-test
-
   checksOK:
     name: "status checks passed"
-    needs: [build, test, lint, integration]
+    needs: [build, test, lint]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: "Check if all checks passed"
         run: |
-          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.integration.result }}" == "success" ]; then
+          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.lint.result }}" == "success" ]; then
             echo "✅ All checks passed 🎉"
             exit 0
           else

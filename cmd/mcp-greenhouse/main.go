@@ -31,13 +31,10 @@ const (
 
 	flagGreenhouseAPIServer = "greenhouse-api-server"
 	flagBindAddress         = "app-bind-address"
-	flagCAURL               = "ca-url"
-	flagCAFile              = "ca-file"
 	flagOTelEndpoint        = "otel-endpoint"
 
 	defaultBindAddress         = "localhost"
 	defaultGreenhouseAPIServer = "https://greenhouse.example.com"
-	defaultCAURL               = "https://greenhouse.example.com/clusters/cluster-ca"
 )
 
 var (
@@ -45,16 +42,12 @@ var (
 	gitCommit           = "unknown"
 	greenhouseAPIServer string
 	bindAddress         string
-	caURL               string
-	caFile              string
 	otelEndpoint        string
 )
 
 func init() {
 	flag.StringVar(&greenhouseAPIServer, flagGreenhouseAPIServer, defaultGreenhouseAPIServer, "URL of the Greenhouse API server")
 	flag.StringVar(&bindAddress, flagBindAddress, defaultBindAddress, "Address to bind the HTTP server to (default: localhost)")
-	flag.StringVar(&caURL, flagCAURL, defaultCAURL, "URL to fetch the Greenhouse cluster CA certificate from")
-	flag.StringVar(&caFile, flagCAFile, "", "Path to a PEM-encoded CA certificate file (takes precedence over --ca-url)")
 	flag.StringVar(&otelEndpoint, flagOTelEndpoint, "", "OTLP gRPC endpoint for tracing (empty = disabled)")
 }
 
@@ -65,11 +58,6 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	logger := ctrl.Log
-
-	caData, err := utils.FetchCA(context.Background(), caURL, caFile)
-	if err != nil {
-		log.Fatalf("failed to load CA: %v", err)
-	}
 
 	shutdown, err := tracing.Init(context.Background(), serviceName, serverVer, otelEndpoint)
 	if err != nil {
@@ -91,7 +79,7 @@ func main() {
 	server.AddReceivingMiddleware(tracing.Middleware(logger, serviceName))
 	server.AddReceivingMiddleware(utils.CreateLoggingMiddleware(logger))
 
-	if err := greenhouse.RegisterTools(logger, server, greenhouseAPIServer, caData); err != nil {
+	if err := greenhouse.RegisterTools(logger, server, greenhouseAPIServer, nil); err != nil {
 		log.Fatalf("failed to register tools: %v", err) //nolint:gocritic // startup failure; tracing shutdown is best-effort
 	}
 

@@ -19,6 +19,13 @@ PLATFORM = linux/arm64
 endif
 endif
 
+# Fall back to linux/amd64 when detection fails (e.g. CI runners where uname -p
+# is "unknown" and PLATFORM resolves empty). This guarantees docker-build always
+# passes --platform, so BuildKit populates TARGETOS/TARGETARCH for the Go
+# cross-compile in the Dockerfile instead of silently building for the host.
+PLATFORM := $(if $(strip $(PLATFORM)),$(PLATFORM),linux/amd64)
+PLATFORM_FLAG = --platform $(PLATFORM)
+
 # CONTAINER_TOOL defines the container tool to be used for building images.
 # Be aware that the target commands are only tested with Docker which is
 # scaffolded by default. However, you might want to replace it to use other
@@ -83,7 +90,7 @@ golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
-# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+##@ Build
 # $1 - target path with name of binary
 # $2 - package url which can be installed
 # $3 - specific version of package
@@ -127,3 +134,36 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 .PHONY: license
 license:
 	$(CONTAINER_TOOL) run --rm -v $(shell pwd):/github/workspace $(IMG_LICENSE_EYE) -c .github/licenserc.yaml header fix
+
+.PHONY: mockery
+mockery: ## Generate mocks using mockery.
+	mockery
+
+##@ Build
+
+VERSION ?= dev
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+.PHONY: action-build
+action-build: build-mcp-greenhouse
+
+.PHONY: build
+build: fmt vet build-mcp-greenhouse ## Build all binaries.
+
+build-%:
+	go build -ldflags "-s -w -X main.serverVer=$(VERSION) -X main.gitCommit=$(GIT_COMMIT)" -o bin/$* ./cmd/$*/
+
+.PHONY: run
+run: fmt vet ## Run mcp-greenhouse from your host.
+	go run ./cmd/mcp-greenhouse/
+
+# If you wish to build the image targeting other platforms you can use the --platform flag.
+# (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
+# More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+.PHONY: docker-build
+docker-build: ## Build docker image.
+	$(CONTAINER_TOOL) build $(PLATFORM_FLAG) --build-arg VERSION=$(VERSION) --build-arg GIT_COMMIT=$(GIT_COMMIT) -t ${IMG} .
+
+.PHONY: docker-push
+docker-push: ## Push docker image.
+	$(CONTAINER_TOOL) push ${IMG}

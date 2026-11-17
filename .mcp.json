@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "greenhouse-local": {
+      "type": "http",
+      "url": "http://localhost:3001/mcp",
+      "oauth": {
+        "clientId": "greenhouse",
+        "callbackPort": 8250
+      }
+    }
+  }
+}

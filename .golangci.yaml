@@ -200,6 +200,12 @@ linters:
           - bodyclose
           - revive
         path: _test\.go
+      # Greenhouse API types embed TypeMeta before ObjectMeta; the modernize
+      # embedlit suggestion to drop the field name produces invalid code.
+      - linters:
+          - modernize
+        path: (.+)_test\.go
+        text: embedlit
       # It is idiomatic Go to reuse the name 'err' with ':=' for subsequent errors.
       # Ref: https://go.dev/doc/effective_go#redeclaration
       - path: (.+)\.go$
